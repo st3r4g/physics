@@ -12,6 +12,7 @@ void msleep(long ms) {
 
 #include "vulkan/device.c"
 #include "vulkan/instance.c"
+#include "vulkan/pipeline.c"
 #include "vulkan/swapchain.c"
 
 int main() {
@@ -43,6 +44,9 @@ int main() {
 	VkSwapchainKHR swapchain;
 	if (vulkan_swapchain(physicalDevice, device, surface, &swapchain))
 		return EXIT_FAILURE;
+
+	VkPipeline pipeline;
+	vulkan_pipeline(device, &pipeline);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
