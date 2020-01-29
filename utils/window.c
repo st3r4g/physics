@@ -10,6 +10,7 @@ void msleep(long ms) {
 	nanosleep(&req, &rem);
 }
 
+#include "vulkan/command.c"
 #include "vulkan/device.c"
 #include "vulkan/instance.c"
 #include "vulkan/pipeline.c"
@@ -53,6 +54,10 @@ int main() {
 	VkFramebuffer *framebuffers;
 	vulkan_framebuffers(device, swapchain, renderPass, &framebufferCount,
 	&framebuffers);
+
+	VkCommandBuffer *commandBuffers;
+	vulkan_commands(device, pipeline, renderPass, framebufferCount,
+	framebuffers, &commandBuffers);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
