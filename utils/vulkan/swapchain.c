@@ -62,53 +62,6 @@ renderPass, uint32_t *framebufferCount_, VkFramebuffer **framebuffers_) {
 
 	*framebufferCount_ = imageCount;
 	*framebuffers_ = framebuffers;
-
-	// -- CUT --
-
-	VkSemaphore semaphore;
-	VkSemaphoreCreateInfo semaphoreCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0
-	};
-	vkCreateSemaphore(device, &semaphoreCreateInfo, NULL, &semaphore);
-
-	VkFence fence;
-	VkFenceCreateInfo fenceCreateInfo = {
-		.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-		.pNext = NULL,
-		.flags = 0
-	};
-	vkCreateFence(device, &fenceCreateInfo, NULL, &fence);
-
-	uint32_t imageIndex;
-	r = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, VK_NULL_HANDLE,
-	fence, &imageIndex);
-	if (r) {
-		fprintf(stderr, "[ERROR] vkAcquireNextImageKHR: %d", r);
-		exit(EXIT_FAILURE);
-	}
-
-	vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
-	msleep(2000);
-
-	/*
-	 * After queueing all rendering commands and transitioning the image to
-	 * the correct layout, to queue an image for presentation:
-	 */
-	VkQueue queue;
-	vkGetDeviceQueue(device, 0, 0, &queue);
-	VkPresentInfoKHR queuePresentInfo = {
-		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-		.pNext = NULL,
-		.waitSemaphoreCount = 0,
-		.pWaitSemaphores = NULL,
-		.swapchainCount = 1,
-		.pSwapchains = &swapchain,
-		.pImageIndices = &imageIndex,
-		.pResults = NULL
-	};
-	vkQueuePresentKHR(queue, &queuePresentInfo);
 }
 
 int vulkan_swapchain(VkPhysicalDevice physicalDevice, VkDevice device,

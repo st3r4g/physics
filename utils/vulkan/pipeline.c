@@ -206,6 +206,16 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 		.pPreserveAttachments = NULL
 	};
 
+	VkSubpassDependency subpassDependency = {
+		.srcSubpass = VK_SUBPASS_EXTERNAL,
+		.dstSubpass = 0,
+		.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		.srcAccessMask = 0,
+		.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+		.dependencyFlags = 0
+	};
+
 	VkRenderPassCreateInfo renderPassCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 		.pNext = NULL,
@@ -214,8 +224,8 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 		.pAttachments = &colorAttachment,
 		.subpassCount = 1,
 		.pSubpasses = &subpass,
-		.dependencyCount = 0,
-		.pDependencies = NULL
+		.dependencyCount = 1,
+		.pDependencies = &subpassDependency
 	};
 
 	VkRenderPass renderPass;
