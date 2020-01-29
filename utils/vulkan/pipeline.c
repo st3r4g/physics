@@ -54,7 +54,8 @@ void vulkan_shader(const char *path, VkDevice device, VkShaderModule *shaderModu
 	*shaderModule_ = shaderModule;
 }
 
-void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_) {
+void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
+*renderPass_) {
 	VkShaderModule vertModule, fragModule;
 	vulkan_shader("vulkan/vert.spv", device, &vertModule);
 	vulkan_shader("vulkan/frag.spv", device, &fragModule);
@@ -251,11 +252,12 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_) {
 	r = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1,
 		&pipelineCreateInfo, NULL, &pipeline);
 	if (r) {
-		fprintf(stderr, "[ERROR] vkCreateShaderModule: %d", r);
+		fprintf(stderr, "[ERROR] vkCreateGraphicsPipelines: %d", r);
 		exit(EXIT_FAILURE);
 	}
 
 	vkDestroyShaderModule(device, vertModule, NULL);
 	vkDestroyShaderModule(device, fragModule, NULL);
 	*pipeline_ = pipeline;
+	*renderPass_ = renderPass;
 }

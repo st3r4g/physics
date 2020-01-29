@@ -46,7 +46,13 @@ int main() {
 		return EXIT_FAILURE;
 
 	VkPipeline pipeline;
-	vulkan_pipeline(device, &pipeline);
+	VkRenderPass renderPass;
+	vulkan_pipeline(device, &pipeline, &renderPass);
+
+	uint32_t framebufferCount;
+	VkFramebuffer *framebuffers;
+	vulkan_framebuffers(device, swapchain, renderPass, &framebufferCount,
+	&framebuffers);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
