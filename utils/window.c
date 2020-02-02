@@ -123,6 +123,10 @@ void draw(VkDevice device, VkSwapchainKHR swapchain, VkCommandBuffer
 		.pResults = NULL
 	};
 	vkQueuePresentKHR(queue, &queuePresentInfo);
+
+	vkQueueWaitIdle(queue);
+	vkDestroySemaphore(device, semaphore1, NULL);
+	vkDestroySemaphore(device, semaphore2, NULL);
 }
 
 int window(void *buffer) {
@@ -130,10 +134,8 @@ int window(void *buffer) {
 	const int M = 256;
 	const double pi = 3.14159;
 	float *data = malloc(2*M*sizeof(float));
-	for (int i=0; i<M; i++) {
+	for (int i=0; i<M; i++)
 		data[2*i] = 2.0f/(M-1)*i-1.0f;
-		data[2*i+1] = -sinf(2*pi*i/(M-1));
-	}
 
 	if (!glfwInit())
 		return EXIT_FAILURE;
@@ -177,18 +179,22 @@ int window(void *buffer) {
 	VkDeviceMemory vertexBufferMemory;
 	create_buffer(device, physicalDevice, 2*M*sizeof(float), &vertexBuffer, &vertexBufferMemory);
 
-	void *dst;
-	vkMapMemory(device, vertexBufferMemory, 0, 2*M*sizeof(float), 0, &dst);
-	memcpy(dst, data, 2*M*sizeof(float));
-	vkUnmapMemory(device, vertexBufferMemory);
-	
 	VkCommandBuffer *commandBuffers;
 	vulkan_commands(device, pipeline, renderPass, framebufferCount,
 	framebuffers, vertexBuffer, M, &commandBuffers);
 
-	draw(device, swapchain, commandBuffers);
-
+	float t = 0.0f;
 	while (!glfwWindowShouldClose(window)) {
+		for (int i=0; i<M; i++)
+			data[2*i+1] = -t*sinf(2*pi*i/(M-1));
+		t = t < 1.0f ? t+0.01f : 0.0f;
+
+		void *dst;
+		vkMapMemory(device, vertexBufferMemory, 0, 2*M*sizeof(float), 0, &dst);
+		memcpy(dst, data, 2*M*sizeof(float));
+		vkUnmapMemory(device, vertexBufferMemory);
+
+		draw(device, swapchain, commandBuffers);
 		glfwPollEvents();
 		msleep(100);
 	}
