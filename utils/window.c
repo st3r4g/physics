@@ -1,20 +1,75 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-void msleep(long ms) {
+/*void msleep(long ms) {
 	struct timespec req = {0, ms*1000000}, rem;
 	nanosleep(&req, &rem);
-}
+}*/
 
 #include "vulkan/command.c"
 #include "vulkan/device.c"
 #include "vulkan/instance.c"
 #include "vulkan/pipeline.c"
 #include "vulkan/swapchain.c"
+
+uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter,
+VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			return i;
+	}
+}
+
+void create_buffer(VkDevice device, VkPhysicalDevice physicalDevice, size_t size,
+VkBuffer *vertexBuffer_, VkDeviceMemory *vertexBufferMemory_) {
+	int r;
+
+	VkBufferCreateInfo bufferCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.size = size,
+		.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = NULL,
+	};
+	VkBuffer vertexBuffer;
+	r = vkCreateBuffer(device, &bufferCreateInfo, NULL, &vertexBuffer);
+	if (r) {
+		fprintf(stderr, "[ERROR] vkCreateBuffer: %d", r);
+		exit(EXIT_FAILURE);
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
+
+	VkMemoryAllocateInfo memoryAllocateInfo = {
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = NULL,
+		.allocationSize = memRequirements.size,
+		.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+	};
+	VkDeviceMemory vertexBufferMemory;
+	r = vkAllocateMemory(device, &memoryAllocateInfo, NULL, &vertexBufferMemory);
+	if (r) {
+		fprintf(stderr, "[ERROR] vkAllocateMemory: %d", r);
+		exit(EXIT_FAILURE);
+	}
+
+	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+	*vertexBuffer_ = vertexBuffer;
+	*vertexBufferMemory_ = vertexBufferMemory;
+}
 
 void draw(VkDevice device, VkSwapchainKHR swapchain, VkCommandBuffer
 *commandBuffers) {
@@ -70,7 +125,16 @@ void draw(VkDevice device, VkSwapchainKHR swapchain, VkCommandBuffer
 	vkQueuePresentKHR(queue, &queuePresentInfo);
 }
 
-int main() {
+int window(void *buffer) {
+//	double *data = buffer;
+	const int M = 256;
+	const double pi = 3.14159;
+	float *data = malloc(2*M*sizeof(float));
+	for (int i=0; i<M; i++) {
+		data[2*i] = 2.0f/(M-1)*i-1.0f;
+		data[2*i+1] = -sinf(2*pi*i/(M-1));
+	}
+
 	if (!glfwInit())
 		return EXIT_FAILURE;
 
@@ -109,9 +173,18 @@ int main() {
 	vulkan_framebuffers(device, swapchain, renderPass, &framebufferCount,
 	&framebuffers);
 
+	VkBuffer vertexBuffer;
+	VkDeviceMemory vertexBufferMemory;
+	create_buffer(device, physicalDevice, 2*M*sizeof(float), &vertexBuffer, &vertexBufferMemory);
+
+	void *dst;
+	vkMapMemory(device, vertexBufferMemory, 0, 2*M*sizeof(float), 0, &dst);
+	memcpy(dst, data, 2*M*sizeof(float));
+	vkUnmapMemory(device, vertexBufferMemory);
+	
 	VkCommandBuffer *commandBuffers;
 	vulkan_commands(device, pipeline, renderPass, framebufferCount,
-	framebuffers, &commandBuffers);
+	framebuffers, vertexBuffer, M, &commandBuffers);
 
 	draw(device, swapchain, commandBuffers);
 
@@ -119,4 +192,6 @@ int main() {
 		glfwPollEvents();
 		msleep(100);
 	}
+
+	return EXIT_SUCCESS;
 }

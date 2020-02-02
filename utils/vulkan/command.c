@@ -1,5 +1,6 @@
 void vulkan_record_command(VkPipeline pipeline, VkRenderPass renderPass,
-VkFramebuffer framebuffer, VkCommandBuffer commandBuffer) {
+VkFramebuffer framebuffer, VkBuffer vertexBuffer, uint32_t vertexCount,
+VkCommandBuffer commandBuffer) {
 	int r;
 
 	VkCommandBufferBeginInfo commandBufferBeginInfo = {
@@ -31,7 +32,9 @@ VkFramebuffer framebuffer, VkCommandBuffer commandBuffer) {
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 	pipeline);
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+	vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 	r = vkEndCommandBuffer(commandBuffer);
@@ -42,8 +45,8 @@ VkFramebuffer framebuffer, VkCommandBuffer commandBuffer) {
 }
 
 void vulkan_commands(VkDevice device, VkPipeline pipeline, VkRenderPass
-renderPass, uint32_t framebufferCount, VkFramebuffer *framebuffers,
-VkCommandBuffer **commandBuffers_) {
+renderPass, uint32_t framebufferCount, VkFramebuffer *framebuffers, VkBuffer
+vertexBuffer, uint32_t vertexCount, VkCommandBuffer **commandBuffers_) {
 	int r;
 
 	VkCommandPoolCreateInfo commandPoolCreateInfo = {
@@ -77,7 +80,7 @@ VkCommandBuffer **commandBuffers_) {
 
 	for (int i=0; i<framebufferCount; i++)
 		vulkan_record_command(pipeline, renderPass, framebuffers[i],
-		commandBuffers[i]);
+		vertexBuffer, vertexCount, commandBuffers[i]);
 
 	*commandBuffers_ = commandBuffers;
 }

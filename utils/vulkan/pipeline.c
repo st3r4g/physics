@@ -57,8 +57,8 @@ void vulkan_shader(const char *path, VkDevice device, VkShaderModule *shaderModu
 void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 *renderPass_) {
 	VkShaderModule vertModule, fragModule;
-	vulkan_shader("vulkan/vert.spv", device, &vertModule);
-	vulkan_shader("vulkan/frag.spv", device, &fragModule);
+	vulkan_shader("vert.spv", device, &vertModule);
+	vulkan_shader("frag.spv", device, &fragModule);
 
 	VkPipelineShaderStageCreateInfo vertStageInfo = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -78,21 +78,34 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 
 	VkPipelineShaderStageCreateInfo stages[] = {vertStageInfo, fragStageInfo};
 
+	VkVertexInputBindingDescription inputBindingDesc = {
+		.binding = 0,
+		.stride = sizeof(double), //TODO: check this
+		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+	};
+
+	VkVertexInputAttributeDescription inputAttributeDesc = {
+		.location = 0,
+		.binding = 0,
+		.format = VK_FORMAT_R32G32_SFLOAT,
+		.offset = 0
+	};
+
 	VkPipelineVertexInputStateCreateInfo vertexInputState = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
-		.vertexBindingDescriptionCount = 0,
-		.pVertexBindingDescriptions = NULL,
-		.vertexAttributeDescriptionCount = 0,
-		.pVertexAttributeDescriptions = NULL
+		.vertexBindingDescriptionCount = 1,
+		.pVertexBindingDescriptions = &inputBindingDesc,
+		.vertexAttributeDescriptionCount = 1,
+		.pVertexAttributeDescriptions = &inputAttributeDesc
 	};
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
-		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
 		.primitiveRestartEnable = VK_FALSE
 	};
 

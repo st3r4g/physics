@@ -1,0 +1,4 @@
+#!/bin/sh
+[ -f vert.spv ] || glslangValidator -V utils/vulkan/shader.vert
+[ -f frag.spv ] || glslangValidator -V utils/vulkan/shader.frag
+gcc osc.c -lglfw -lvulkan

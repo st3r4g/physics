@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+//#include <threads.h>
 
 #define N 72 // 2*N_osc
 #define h 0.01
@@ -55,6 +56,9 @@ void print_osc(int x) {
 	}
 }
 
+#undef h //temp
+#include "utils/window.c"
+
 int main() {
 	double *s = malloc(N*sizeof(double));
 	double *tmp = malloc(N*sizeof(double));
@@ -65,6 +69,12 @@ int main() {
 	double *k4 = malloc(N*sizeof(double));
 
 	init_s(s);
+
+//	thrd_t thread;
+//	thrd_create(&thread, window, 0);
+	window(s);
+	return EXIT_SUCCESS;
+
 	printf("\e[1;1H\e[2J"); // clear
 	for (int i=0; i<N; i+=2) print_osc(0);
 	fflush(stdout);
