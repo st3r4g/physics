@@ -1,4 +1,4 @@
 #!/bin/sh
 [ -f vert.spv ] || glslangValidator -V utils/vulkan/shader.vert
 [ -f frag.spv ] || glslangValidator -V utils/vulkan/shader.frag
-gcc osc.c -lglfw -lvulkan
+gcc osc.c utils/wayland/xdg-shell-protocol.o utils/wayland/wlvk.o -lm -lwayland-client -lvulkan

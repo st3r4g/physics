@@ -1,5 +1,6 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "wayland/wlvk.h"
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_wayland.h>
 
 #include <math.h>
 #include <stdio.h>
@@ -129,15 +130,36 @@ void draw(VkDevice device, VkSwapchainKHR swapchain, VkCommandBuffer
 	vkDestroySemaphore(device, semaphore2, NULL);
 }
 
+VkDevice device;
+VkSwapchainKHR swapchain;
+VkCommandBuffer *commandBuffers;
+VkDeviceMemory vertexBufferMemory;
+float *data;
+const int M = 256;
+const double pi = 3.14159;
+
+void render_callback(int elapsed) {
+	static float t = 0.0f;
+	for (int i=0; i<M; i++)
+		data[2*i+1] = -t*sinf(2*pi*i/(M-1));
+	t = t < 1.0f ? t+elapsed/2000.0f : 0.0f;
+
+	void *dst;
+	vkMapMemory(device, vertexBufferMemory, 0, 2*M*sizeof(float), 0, &dst);
+	memcpy(dst, data, 2*M*sizeof(float));
+	vkUnmapMemory(device, vertexBufferMemory);
+
+	draw(device, swapchain, commandBuffers);
+//	msleep(100);
+}
+
 int window(void *buffer) {
 //	double *data = buffer;
-	const int M = 256;
-	const double pi = 3.14159;
-	float *data = malloc(2*M*sizeof(float));
+	data = malloc(2*M*sizeof(float));
 	for (int i=0; i<M; i++)
 		data[2*i] = 2.0f/(M-1)*i-1.0f;
 
-	if (!glfwInit())
+/*	if (!glfwInit())
 		return EXIT_FAILURE;
 
 	if (!glfwVulkanSupported()) {
@@ -145,24 +167,32 @@ int window(void *buffer) {
 		return EXIT_FAILURE;
 	}
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(640, 480, "Window Title", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(640, 480, "Window Title", NULL, NULL);*/
+
+	wlvk_init(render_callback);
 
 	VkInstance instance;
 	if (vulkan_instance(&instance))
 		return EXIT_FAILURE;
 
 	VkSurfaceKHR surface;
-	if (glfwCreateWindowSurface(instance, window, NULL, &surface)) {
+/*	if (glfwCreateWindowSurface(instance, window, NULL, &surface)) {
 		printf("Window surface creation failed\n");
 		return EXIT_FAILURE;
-	}
+	}*/
+	struct VkWaylandSurfaceCreateInfoKHR createInfo = {
+    		.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+    		.pNext = NULL,
+    		.flags = 0,
+    		.display = wlvk_get_wl_display(),
+    		.surface = wlvk_get_wl_surface(),
+	};
+	vkCreateWaylandSurfaceKHR(instance, &createInfo, NULL, &surface);
 
 	VkPhysicalDevice physicalDevice;
-	VkDevice device;
 	if (vulkan_device(instance, &physicalDevice, &device))
 		return EXIT_FAILURE;
 
-	VkSwapchainKHR swapchain;
 	if (vulkan_swapchain(physicalDevice, device, surface, &swapchain))
 		return EXIT_FAILURE;
 
@@ -176,28 +206,11 @@ int window(void *buffer) {
 	&framebuffers);
 
 	VkBuffer vertexBuffer;
-	VkDeviceMemory vertexBufferMemory;
 	create_buffer(device, physicalDevice, 2*M*sizeof(float), &vertexBuffer, &vertexBufferMemory);
 
-	VkCommandBuffer *commandBuffers;
 	vulkan_commands(device, pipeline, renderPass, framebufferCount,
 	framebuffers, vertexBuffer, M, &commandBuffers);
 
-	float t = 0.0f;
-	while (!glfwWindowShouldClose(window)) {
-		for (int i=0; i<M; i++)
-			data[2*i+1] = -t*sinf(2*pi*i/(M-1));
-		t = t < 1.0f ? t+0.01f : 0.0f;
-
-		void *dst;
-		vkMapMemory(device, vertexBufferMemory, 0, 2*M*sizeof(float), 0, &dst);
-		memcpy(dst, data, 2*M*sizeof(float));
-		vkUnmapMemory(device, vertexBufferMemory);
-
-		draw(device, swapchain, commandBuffers);
-		glfwPollEvents();
-		msleep(100);
-	}
-
+	wlvk_run();
 	return EXIT_SUCCESS;
 }
