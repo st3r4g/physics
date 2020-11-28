@@ -80,14 +80,14 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 
 	VkVertexInputBindingDescription inputBindingDesc = {
 		.binding = 0,
-		.stride = sizeof(double), //TODO: check this
+		.stride = 3*sizeof(float),
 		.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
 	};
 
 	VkVertexInputAttributeDescription inputAttributeDesc = {
 		.location = 0,
 		.binding = 0,
-		.format = VK_FORMAT_R32G32_SFLOAT,
+		.format = VK_FORMAT_R32G32B32_SFLOAT,
 		.offset = 0
 	};
 
@@ -105,7 +105,7 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
-		.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 		.primitiveRestartEnable = VK_FALSE
 	};
 

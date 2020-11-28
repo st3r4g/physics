@@ -92,7 +92,7 @@ VkSurfaceKHR surface, VkSwapchainKHR *swapchain) {
 		.pQueueFamilyIndices = NULL,
 		.preTransform = surfaceCapabilities.currentTransform,
 		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-		.presentMode = VK_PRESENT_MODE_FIFO_KHR,
+		.presentMode = VK_PRESENT_MODE_MAILBOX_KHR,
 		.clipped = VK_TRUE,
 		.oldSwapchain = VK_NULL_HANDLE
 	};
