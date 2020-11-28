@@ -37,7 +37,7 @@ void file_reader(const char *filename, int is_mtl, const char *obj_filename,
     readFile(filename, len, (void**)buf);
 }
 
-//#include <stdio.h>
+#include <stdio.h>
 
 void loadModel(size_t *num_vertices, float **vertices_) {
     tinyobj_attrib_t attrib;
@@ -46,12 +46,17 @@ void loadModel(size_t *num_vertices, float **vertices_) {
     size_t num_shapes, num_materials;
     tinyobj_parse_obj(&attrib, &shapes, &num_shapes, &materials, &num_materials,
                       "cube.obj", file_reader, TINYOBJ_FLAG_TRIANGULATE);
-    float *vertices = malloc(3*attrib.num_faces*sizeof(float));
+    float *vertices = malloc(6*attrib.num_faces*sizeof(float));
     for (int i=0; i<attrib.num_faces; i++) {
-        vertices[3*i] = attrib.vertices[3*attrib.faces[i].v_idx]/2.0f;
-        vertices[3*i+1] = attrib.vertices[3*attrib.faces[i].v_idx+1]/2.0f;
-        vertices[3*i+2] = attrib.vertices[3*attrib.faces[i].v_idx+2]/2.0f;
+        vertices[6*i] = attrib.vertices[3*attrib.faces[i].v_idx]/2.0f;
+        vertices[6*i+1] = attrib.vertices[3*attrib.faces[i].v_idx+1]/2.0f;
+        vertices[6*i+2] = attrib.vertices[3*attrib.faces[i].v_idx+2]/2.0f;
+        vertices[6*i+3] = materials[attrib.material_ids[i/3]].diffuse[0];
+        vertices[6*i+4] = materials[attrib.material_ids[i/3]].diffuse[1];
+        vertices[6*i+5] = materials[attrib.material_ids[i/3]].diffuse[2];
     }
-    *num_vertices = 3*attrib.num_faces;
+    printf("mat 0: %f %f %f\n", materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2]);
+    printf("%d num_face_num_verts %d\n", attrib.num_faces, attrib.num_face_num_verts);
+    *num_vertices = 6*attrib.num_faces;
     *vertices_ = vertices;
 }
