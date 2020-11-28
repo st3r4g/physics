@@ -54,8 +54,30 @@ void vulkan_shader(const char *path, VkDevice device, VkShaderModule *shaderModu
 	*shaderModule_ = shaderModule;
 }
 
+void createDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout *descriptorSetLayout_) {
+    struct VkDescriptorSetLayoutBinding uboLayoutBinding = {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .pImmutableSamplers = NULL
+    };
+
+    struct VkDescriptorSetLayoutCreateInfo createInfo = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = NULL,
+        .flags = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .bindingCount = 1,
+        .pBindings = &uboLayoutBinding
+    };
+    
+    VkDescriptorSetLayout descriptorSetLayout;
+    vkCreateDescriptorSetLayout(device, &createInfo, NULL, &descriptorSetLayout);
+    *descriptorSetLayout_ = descriptorSetLayout;
+}
+
 void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
-*renderPass_) {
+*renderPass_, VkDescriptorSetLayout *descriptorSetLayout_, VkPipelineLayout *pipelineLayout_) {
 	VkShaderModule vertModule, fragModule;
 	vulkan_shader("vert.spv", device, &vertModule);
 	vulkan_shader("frag.spv", device, &fragModule);
@@ -172,12 +194,14 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 		.blendConstants = {0.0f, 0.0f, 0.0f, 0.0f}
 	};
 
+	VkDescriptorSetLayout descriptorSetLayout;
+	createDescriptorSetLayout(device, &descriptorSetLayout);
 	VkPipelineLayoutCreateInfo layoutCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
-		.setLayoutCount = 0,
-		.pSetLayouts = NULL,
+		.setLayoutCount = 1,
+		.pSetLayouts = &descriptorSetLayout,
 		.pushConstantRangeCount = 0,
 		.pPushConstantRanges = NULL
 	};
@@ -283,4 +307,6 @@ void vulkan_pipeline(VkDevice device, VkPipeline *pipeline_, VkRenderPass
 	vkDestroyShaderModule(device, fragModule, NULL);
 	*pipeline_ = pipeline;
 	*renderPass_ = renderPass;
+	*descriptorSetLayout_ = descriptorSetLayout;
+	*pipelineLayout_ = layout;
 }

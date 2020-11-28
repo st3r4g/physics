@@ -37,6 +37,8 @@ void file_reader(const char *filename, int is_mtl, const char *obj_filename,
     readFile(filename, len, (void**)buf);
 }
 
+//#include <stdio.h>
+
 void loadModel(size_t *num_vertices, float **vertices_) {
     tinyobj_attrib_t attrib;
     tinyobj_shape_t *shapes;

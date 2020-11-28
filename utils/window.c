@@ -1,3 +1,5 @@
+#include <cglm/mat4.h>
+#include <cglm/affine.h>
 #include "wayland/wlvk.h"
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_wayland.h>
@@ -12,6 +14,12 @@
 	struct timespec req = {0, ms*1000000}, rem;
 	nanosleep(&req, &rem);
 }*/
+
+struct UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+} ubo;
 
 #include "vulkan/command.c"
 #include "vulkan/device.c"
@@ -71,10 +79,12 @@ VkBuffer *buffer_, VkDeviceMemory *bufferMemory_) {
 
 	vkBindBufferMemory(device, buffer, bufferMemory, 0);
 
-	void *dst;
-	vkMapMemory(device, bufferMemory, 0, size, 0, &dst);
-	memcpy(dst, data, size);
-	vkUnmapMemory(device, bufferMemory);
+	if (data) {
+	    	void *dst;
+	    	vkMapMemory(device, bufferMemory, 0, size, 0, &dst);
+	    	memcpy(dst, data, size);
+	    	vkUnmapMemory(device, bufferMemory);
+	}
 
 	*buffer_ = buffer;
 	*bufferMemory_ = bufferMemory;
@@ -141,18 +151,27 @@ void draw(VkDevice device, VkSwapchainKHR swapchain, VkCommandBuffer
 VkDevice device;
 VkSwapchainKHR swapchain;
 VkCommandBuffer *commandBuffers;
-VkDeviceMemory vertexBufferMemory;
+VkDeviceMemory vertexBufferMemory, uniformBufferMemory;
 //float *data;
 size_t num_vertices, num_indices;
 const double pi = 3.14159;
 //float *xyzzy;
 
 void render_callback(int elapsed) {
-/*	static float t = 0.0f;
-	for (int i=0; i<M; i++)
+	static float t = 0.0f;
+/*	for (int i=0; i<M; i++)
 		data[2*i+1] = -t*sinf(2*pi*i/(M-1));
 	t = t < 1.0f ? t+elapsed/2000.0f : 0.0f;*/
+	t += elapsed;
+	glm_mat4_identity(ubo.model);
+	glm_rotate_x(ubo.model, t/2000.0f, ubo.model);
+	glm_mat4_identity(ubo.view);
+	glm_mat4_identity(ubo.proj);
 
+    	void *dst;
+    	vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &dst);
+    	memcpy(dst, &ubo, sizeof(ubo));
+    	vkUnmapMemory(device, uniformBufferMemory);
 
 	draw(device, swapchain, commandBuffers);
 //	msleep(100);
@@ -203,7 +222,9 @@ int window(void *buffer) {
 
 	VkPipeline pipeline;
 	VkRenderPass renderPass;
-	vulkan_pipeline(device, &pipeline, &renderPass);
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkPipelineLayout pipelineLayout;
+	vulkan_pipeline(device, &pipeline, &renderPass, &descriptorSetLayout, &pipelineLayout);
 
 	uint32_t framebufferCount;
 	VkFramebuffer *framebuffers;
@@ -215,14 +236,16 @@ int window(void *buffer) {
 //	for (int i=0; i<num_vertices/3; i++)
 //		printf("%f %f %f\n", vertices[3*i], vertices[3*i+1], vertices[3*i+2]);
 
-	VkBuffer vertexBuffer, indexBuffer;
+	VkBuffer vertexBuffer, uniformBuffer;
 	create_buffer(device, physicalDevice, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 	              vertices, num_vertices*sizeof(float), &vertexBuffer, &vertexBufferMemory);
+	create_buffer(device, physicalDevice, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	              NULL, sizeof(ubo), &uniformBuffer, &uniformBufferMemory);
 //	create_buffer(device, physicalDevice, VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 //	              3*num_indices*sizeof(float), indices, &indexBuffer, &indexBufferMemory);
 
-	vulkan_commands(device, pipeline, renderPass, framebufferCount,
-	framebuffers, vertexBuffer, num_vertices, &commandBuffers);
+	vulkan_commands(device, pipeline, renderPass, descriptorSetLayout, pipelineLayout,
+	framebufferCount, framebuffers, vertexBuffer, num_vertices, uniformBuffer, &commandBuffers);
 
 	wlvk_run();
 	return EXIT_SUCCESS;
